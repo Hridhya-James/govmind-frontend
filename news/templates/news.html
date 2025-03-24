@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/news.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="display-4 fw-bold mb-4 text-center">Latest News</h1>
+
+    <!-- Search and Filter Section -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" id="filter-form" class="row g-3 align-items-center">
+                <!-- Search Box -->
+                <div class="col-md position-relative">
+                    <div class="input-group">
+                        <span class="input-group-text">🔍</span>
+                        <input type="text" name="search" id="search-input" placeholder="Search news..." 
+                            class="form-control rounded-end"
+                            value="{{ request.GET.search }}">
+                    </div>
+                </div>
+
+                <!-- Date Filter -->
+                <div class="col-md-2">
+                    <input type="date" id="date-filter" name="date" value="{{ request.GET.date }}"
+                        class="form-control">
+                </div>
+
+                <!-- Sentiment Filter -->
+                <div class="col-md-2">
+                    <select name="sentiment" id="sentiment-select" class="form-select">
+                        <option value="" {% if not request.GET.sentiment %}selected{% endif %}>All Sentiments</option>
+                        <option value="Positive" {% if request.GET.sentiment == 'Positive' %}selected{% endif %}>Positive</option>
+                        <option value="Negative" {% if request.GET.sentiment == 'Negative' %}selected{% endif %}>Negative</option>
+                        <option value="Neutral" {% if request.GET.sentiment == 'Neutral' %}selected{% endif %}>Neutral</option>
+                    </select>
+                </div>
+
+                <!-- Search Button -->
+                <div class="col-md-auto">
+                    <button type="button" onclick="fetchNews()" class="btn btn-success rounded-pill px-4">
+                        Search
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Applied Filters Section -->
+            <div id="applied-filters" class="d-flex flex-wrap gap-2 mt-3"></div>
+        </div>
+    </div>
+
+    <!-- News Cards Grid -->
+    <div id="news-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
+
+    <!-- Pagination Controls -->
+    <nav aria-label="News pagination" class="mt-4">
+        <ul id="pagination" class="pagination justify-content-center">
+            <li id="prev-page-item" class="page-item disabled">
+                <button id="prev-page" class="page-link" onclick="fetchNews(currentPage - 1)">Previous</button>
+            </li>
+            <li class="page-item active">
+                <span id="page-info" class="page-link">Page 1</span>
+            </li>
+            <li id="next-page-item" class="page-item">
+                <button id="next-page" class="page-link" onclick="fetchNews(currentPage + 1)">Next</button>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<script src="{% static 'js/news.js' %}"></script>
+{% endblock %}

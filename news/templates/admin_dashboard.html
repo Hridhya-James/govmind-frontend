@@ -1,0 +1,162 @@
+{% extends "admin_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold text-danger">Admin Dashboard</h1>
+        <p class="lead">Manage all news articles and users from a central location.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="badge bg-danger p-2 fs-6">
+            Admin Panel
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary mb-3">
+                    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
+                    <path d="M18 14h-8"></path>
+                    <path d="M15 18h-5"></path>
+                    <path d="M10 6h8v4h-8V6Z"></path>
+                </svg>
+                <h2 class="display-4 fw-bold">{{ total_news }}</h2>
+                <p class="lead">Total News Articles</p>
+                <a href="{% url 'admin_news' %}" class="btn btn-primary">Manage News</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success mb-3">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <h2 class="display-4 fw-bold">{{ total_users }}</h2>
+                <p class="lead">Total Users</p>
+                <a href="{% url 'admin_users' %}" class="btn btn-success">Manage Users</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning mb-3">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+                <h2 class="display-4 fw-bold">{{ total_departments }}</h2>
+                <p class="lead">Total Departments</p>
+                <button class="btn btn-warning" disabled>View Departments</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-danger">
+                <h5 class="card-title text-white mb-0">Sentiment Overview (All News)</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 250px;">
+                    <canvas id="sentimentPieChart"></canvas>
+                </div>
+                <div class="row text-center mt-3 pt-3 border-top">
+                    <div class="col-4">
+                        <div class="text-success">
+                            <div class="fs-5 fw-bold">{{ positive_percentage }}%</div>
+                            <div class="small">Positive</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-warning">
+                            <div class="fs-5 fw-bold">{{ negative_percentage }}%</div>
+                            <div class="small">Negative</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-primary">
+                            <div class="fs-5 fw-bold">{{ neutral_percentage }}%</div>
+                            <div class="small">Neutral</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-danger">
+                <h5 class="card-title text-white mb-0">Daily News Count</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="sentimentLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-danger">
+        <h5 class="card-title text-white mb-0">News By Department</h5>
+    </div>
+    <div class="card-body">
+        <div style="height: 400px;">
+            <canvas id="departmentBarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-danger">
+        <h5 class="card-title text-white mb-0">Recent News</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Date</th>
+                        <th>Sentiment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for news in recent_news %}
+                    <tr>
+                        <td>{{ news.title|truncatechars:50 }}</td>
+                        <td>{{ news.department }}</td>
+                        <td>{{ news.date }}</td>
+                        <td>
+                            {% if news.sentiment == "Positive" %}
+                            <span class="badge bg-success">Positive</span>
+                            {% elif news.sentiment == "Negative" %}
+                            <span class="badge bg-warning">Negative</span>
+                            {% else %}
+                            <span class="badge bg-primary">Neutral</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_news_edit' news._id %}" class="btn btn-sm btn-primary">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{% url 'admin_news' %}" class="btn btn-outline-danger

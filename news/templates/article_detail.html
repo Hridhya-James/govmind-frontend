@@ -1,27 +1,113 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/article_detail.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="article-container">
-    <div class="article-header">
-        <img src="{{ article.image.url }}" alt="{{ article.title }}">
-        <h1>{{ article.title }}</h1>
-    </div>
-    <div class="sentiment-summary">
-        <div class="sentiment-item positive">
-            <span>Positive</span>
-            <span>{{ article.positive_percentage }}%</span>
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm">
+        <div class="card-body p-md-5 p-3">
+          <!-- Article Header -->
+          <header class="text-center mb-4">
+            {% if article.image %}
+              <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded mb-3">
+            {% else %}
+              <img src="https://via.placeholder.com/800x400?text=No+Image+Available" alt="No Image Available" class="img-fluid rounded mb-3">
+            {% endif %}
+            <h1 class="card-title fw-bold">{{ article.title }}</h1>
+            <p class="text-muted">
+              <strong>Last Updated:</strong> {{ last_updated }} |
+              <strong>Source:</strong> {{ article.source }}
+            </p>
+          </header>
+
+          <!-- Sentiment Summary -->
+          <div class="card bg-light mb-4">
+            <div class="card-body">
+              <h3 class="card-title fs-4">Sentiment Analysis</h3>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span>😊 Positive:</span>
+                  <span>{{ positive_percentage|default_if_none:"0" }}%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-success" role="progressbar" 
+                       style="width: {{ positive_percentage|default_if_none:'0' }}%"
+                       aria-valuenow="{{ positive_percentage|default_if_none:'0' }}" 
+                       aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span>😠 Negative:</span>
+                  <span>{{ negative_percentage|default_if_none:"0" }}%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-danger" role="progressbar" 
+                       style="width: {{ negative_percentage|default_if_none:'0' }}%"
+                       aria-valuenow="{{ negative_percentage|default_if_none:'0' }}" 
+                       aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span>😐 Neutral:</span>
+                  <span>{{ neutral_percentage|default_if_none:"0" }}%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-warning" role="progressbar" 
+                       style="width: {{ neutral_percentage|default_if_none:'0' }}%"
+                       aria-valuenow="{{ neutral_percentage|default_if_none:'0' }}" 
+                       aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Article Content -->
+          <div class="mb-4">
+            <h3 class="fs-4">Article Content</h3>
+            <div class="article-text">
+              {% if article.content %}
+                <p>{{ article.content|safe }}</p>
+              {% else %}
+                <p class="text-muted fst-italic">No content available for this article.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Related Articles Section -->
+          <div class="card bg-light mb-4">
+            <div class="card-body">
+              <h3 class="fs-4">More from this category</h3>
+              <ul class="list-group list-group-flush">
+                {% for related in related_articles %}
+                <li class="list-group-item bg-transparent border-0 ps-0">
+                  <a href="{% url 'article_detail' article_id=related.article_id %}" class="text-decoration-none fw-medium">
+                    {{ related.title }}
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          <!-- Back Button -->
+          <div class="text-center">
+            <a href="{% url 'news' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Back to Home
+            </a>
+          </div>
         </div>
-        <div class="sentiment-item negative">
-            <span>Negative</span>
-            <span>{{ article.negative_percentage }}%</span>
-        </div>
-        <div class="sentiment-item neutral">
-            <span>Neutral</span>
-            <span>{{ article.neutral_percentage }}%</span>
-        </div>
+      </div>
     </div>
-    <div class="article-content">
-        {{ article.content|safe }}
-    </div>
+  </div>
 </div>
 {% endblock %}
