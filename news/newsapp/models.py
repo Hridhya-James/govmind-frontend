@@ -25,6 +25,7 @@ class News(djongo_models.Model):
 
 # ✅ SQLite Model for Authentication
 class User(AbstractUser):
+    department = models.CharField(max_length=255, blank=True, null=True)
     login_id = models.CharField(max_length=100, unique=True)  # Custom Login ID field
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=[('admin', 'Admin'), ('user', 'User')])

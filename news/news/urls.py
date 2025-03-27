@@ -21,7 +21,13 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin_views.admin_dashboard, name='admin_dashboard'),
     path('admin/news/', admin_views.admin_news, name='admin_news'),
+    path('news/update/<str:article_id>/', admin_views.updateNews, name='updateNews'),
+    path('news/delete/<str:article_id>/', admin_views.deleteNews, name='deleteNews'),
+    path('admin/news/news_get/', admin_views.news_get_view, name='news_get'),
     path('admin/users/', admin_views.admin_users, name='admin_users'),
+    path('admin/add-user/', admin_views.save_user, name='add_user'),
+    path('admin/export-pdf/', admin_views.admin_export_pdf, name='admin_export_pdf'),  
+    path('admin/user_api/', admin_views.user_api, name='user_api'),
     path('',views.login_view, name='login'),
     path('login/',views.login_view, name='login'),
     path('dashboard/',views.dashboard,name='dashboard'),
@@ -31,4 +37,6 @@ urlpatterns = [
     path('notifications/',views.get_notifications,name='notifications'),
     path('logout/', views.logout_view, name='logout'),
     path('export-pdf/', views.export_pdf, name='export_pdf'),
+    
+
 ]

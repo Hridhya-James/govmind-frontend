@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'news.urls'
@@ -148,6 +149,30 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home/'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in DB
 SESSION_COOKIE_AGE = 86400  # 1-day session
-SESSION_SAVE_EVERY_REQUEST = True  # 🔹 Forces session save every request
+SESSION_SAVE_EVERY_REQUEST = True  
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+            'news': {  # Change this to your project name
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 

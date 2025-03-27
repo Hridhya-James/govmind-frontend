@@ -1,6 +1,8 @@
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.decorators import login_required 
 from django.core.paginator import Paginator, EmptyPage
+from django.views.decorators.csrf import csrf_exempt
 from reportlab.lib.styles import getSampleStyleSheet
 from django.contrib.auth import authenticate, login
 from django.shortcuts import get_object_or_404
@@ -18,12 +20,15 @@ from reportlab.lib import colors
 from django.db import connection
 from pymongo import MongoClient
 from .models import News, User
+from bson.binary import Binary
 from django.views import View
 from django.db import models
 from io import BytesIO
 import bcrypt
 import logging
+import base64
 import json
+
 
 logger = logging.getLogger(__name__)
 
@@ -79,32 +84,10 @@ def dashboard_view(request):
     
     # Rest of your existing view function code...
 
-class AdminDashboardView(View):
-    def get(self, request):
-        total_news = News.objects.count()
-        total_users = User.objects.count()
-        # Use PyMongo for aggregation
-        sentiment_counts = list(News.objects.mongo_aggregate([
-            {"$group": {"_id": "$sentiment", "count": {"$sum": 1}}}
-        ]))
-        return render(request, 'admin_dashboard.html', {
-            "total_news": total_news,
-            "total_users": total_users,
-            "sentiment_counts": sentiment_counts
-        })
-
-class AdminNewsView(View):
-    def get(self, request):
-        news_list = News.objects.all()
-        return render(request, 'admin_news.html', {"news_list": news_list})
-
-class AdminUsersView(View):
-    def get(self, request):
-        users_list = User.objects.all()
-        return render(request, 'admin_users.html', {"users_list": users_list})
-
 def login_view(request):
+    user = None
     if request.method == 'POST':
+        print(f"Login attempt: {request.POST.get('username')}")
         client = MongoClient("mongodb+srv://amantaphelix:amantaphelix@cluster0.mmmiw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", tls=True)
         db = client["news_database"]
         users_collection = db["users"]
@@ -120,23 +103,41 @@ def login_view(request):
         })
 
         if user:
-            if bcrypt.checkpw(password.encode('utf-8'), user['password']):
-                request.session['user_id'] = str(user['_id'])  # Store user ID
+            if isinstance(user['password'], Binary):
+                # Decode from Base64 Binary
+                try:
+                    decoded_hash = base64.b64decode(user['password'])
+                    password_valid = bcrypt.checkpw(password.encode('utf-8'), decoded_hash)
+                except:
+                    password_valid = False
+            else:
+                # Handle raw bcrypt hash
+                stored_password = user['password']
+                if isinstance(stored_password, str):
+                    stored_password = stored_password.encode('utf-8')
+                password_valid = bcrypt.checkpw(password.encode('utf-8'), stored_password)
+
+            if password_valid:
+                # Store session data
+                request.session['user_id'] = str(user['_id'])
                 request.session['username'] = user.get('username')
                 request.session['role'] = user.get('role', 'user')
                 request.session['department'] = user.get('department', '')
-
-                request.session.modified = True  # 🔹 Ensure session updates
-                request.session.save()  # 🔹 Explicitly save session
-
+                
+                # Make sure session is saved
+                request.session.modified = True
+                
+                # Log successful login for debugging
+                print(f"User logged in: {user.get('username')} with role {user.get('role')}")
+                
+                # Redirect based on role
                 if user.get('role') == 'admin':
                     return redirect('admin_dashboard')
                 else:
                     return redirect('dashboard')
-            else:
-                messages.error(request, 'Invalid username or password.')
-        else:
-            messages.error(request, 'User not found.')
+        print(f"User found: {user is not None}")
+    if user:
+        print(f"User role: {user.get('role')}")
 
     return render(request, 'login.html')
 
@@ -278,6 +279,13 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 def notifications(request):
+    if 'user_id' not in request.session:
+        return redirect('login')
+    
+    # Check if user has admin role
+    if request.session.get('role') == 'admin':
+        return redirect('dashboard')  # Or create an admin_notifications view
+    
     return redirect('dashboard')
 
 def logout_view(request):
@@ -285,6 +293,7 @@ def logout_view(request):
     return redirect('login')
 
 def get_news(request):
+    
     search_query = request.GET.get('search', '').strip()
     date_filter = request.GET.get('date', '').strip()
     sentiment_filter = request.GET.get('sentiment', '').strip()
@@ -327,6 +336,7 @@ def get_news(request):
             "source": article.source,
             "last_updated": article.last_updated.strftime("%Y-%m-%d %H:%M") if article.last_updated else "Unknown",
             "url": article.url or "#",
+            "image_url": article.image_url
         })
 
     return JsonResponse({
@@ -375,6 +385,13 @@ def article_detail(request, article_id):
         "related_articles": related_articles
     })
 def news(request):
+    if 'user_id' not in request.session:
+        return redirect('login')
+    
+    # Check if user has admin role
+    if request.session.get('role') == 'admin':
+        return redirect('admin_news')
+    
     return render(request, 'news.html')
 def get_notifications(request):
     if 'user_id' not in request.session:

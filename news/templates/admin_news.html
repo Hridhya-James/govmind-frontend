@@ -155,9 +155,10 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="newsDepartment" class="form-label">Department</label>
-                            <select class="form-select" id="newsDepartment" required>
+                            <select name="department" id="department-select" class="form-select">
+                                <option value="" {% if not request.GET.department %}selected{% endif %}>All Departments</option>
                                 {% for dept in departments %}
-                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    <option value="{{ dept }}" {% if request.GET.department == dept %}selected{% endif %}>{{ dept }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -172,7 +173,6 @@
     </div>
 </div>
 
-<!-- Edit News Modal -->
 <div class="modal fade" id="editNewsModal" tabindex="-1" aria-labelledby="editNewsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -191,63 +191,58 @@
                         <label for="editNewsContent" class="form-label">Content</label>
                         <textarea class="form-control" id="editNewsContent" rows="5" required></textarea>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editNewsSource" class="form-label">Source</label>
-                            <input type="text" class="form-control" id="editNewsSource" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editNewsDate" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="editNewsDate" required>
-                        </div>
+                    <div class="mb-3">
+                        <label for="editNewsSource" class="form-label">Source</label>
+                        <input type="text" class="form-control" id="editNewsSource" required>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editNewsSentiment" class="form-label">Sentiment</label>
-                            <select class="form-select" id="editNewsSentiment" required>
-                                <option value="Positive">Positive</option>
-                                <option value="Negative">Negative</option>
-                                <option value="Neutral">Neutral</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editNewsDepartment" class="form-label">Department</label>
-                            <select class="form-select" id="editNewsDepartment" required>
-                                {% for dept in departments %}
-                                    <option value="{{ dept }}">{{ dept }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label for="editNewsDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="editNewsDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNewsSentiment" class="form-label">Sentiment</label>
+                        <select class="form-select" id="editNewsSentiment" required>
+                            <option value="Positive">Positive</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Negative">Negative</option>
+                        </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateNews()">Update News</button>
+                <button type="button" class="btn btn-primary" id="saveNewsBtn">Save changes</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Confirmation Modal for Delete -->
+
+
+<!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Deletion</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this news item? This action cannot be undone.</p>
                 <input type="hidden" id="deleteNewsId">
+                <p>Are you sure you want to delete this news item?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
             </div>
         </div>
     </div>
 </div>
 
+
+
 <script src="{% static 'js/admin_news.js' %}"></script>
+<script>
+    const fetchNewsUrl = "/news/news_get/"; <!-- Update fetch URL to match the logic in news.js -->
+</script>
 {% endblock %}

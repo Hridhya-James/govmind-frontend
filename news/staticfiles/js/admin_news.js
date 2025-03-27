@@ -5,182 +5,220 @@ let newsItems = [];
 let selectedNewsId = null;
 
 // Initialize everything when the DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Fetch initial news data
-    fetchNews(1);
-    
-    // Set up search form submission
-    document.getElementById('filter-form').addEventListener('submit', function(e) {
+document.addEventListener('DOMContentLoaded', function () {
+    fetchNews(1); // Fetch initial news data
+
+    // Search form submission
+    document.getElementById('filter-form').addEventListener('submit', function (e) {
         e.preventDefault();
         fetchNews(1);
     });
-    
-    // Set up event listeners for edit and delete buttons
-    document.addEventListener('click', function(e) {
-        // Check if edit button was clicked
-        if (e.target.matches('.edit-news-btn') || e.target.closest('.edit-news-btn')) {
-            const newsId = e.target.closest('.edit-news-btn').dataset.newsId;
-            editNews(newsId);
-        }
-        
-        // Check if delete button was clicked
-        if (e.target.matches('.delete-news-btn') || e.target.closest('.delete-news-btn')) {
-            const newsId = e.target.closest('.delete-news-btn').dataset.newsId;
-            showDeleteModal(newsId);
-        }
-    });
-    
-    // Set up save news button
-    document.getElementById('saveNewsBtn').addEventListener('click', saveNews);
-    
-    // Set up confirm delete button
-    document.getElementById('confirmDeleteBtn').addEventListener('click', deleteNews);
+
+    // Attach event listeners for cancel buttons
+    setupModalCancelListeners();
 });
 
-// Fetch news from the API
+function renderPagination(totalPages, currentPage) {
+    console.log("DEBUG: renderPagination called");  // Debugging log
+    const pageInfo = document.getElementById("page-info");
+    const prevPageItem = document.getElementById("prev-page-item");
+    const nextPageItem = document.getElementById("next-page-item");
+
+    if (!pageInfo || !prevPageItem || !nextPageItem) {
+        console.error("Pagination elements not found in DOM");
+        return;
+    }
+
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    prevPageItem.classList.toggle("disabled", currentPage <= 1);
+    nextPageItem.classList.toggle("disabled", currentPage >= totalPages);
+
+    prevPageItem.onclick = function () {
+        if (currentPage > 1) {
+            fetchNews(currentPage - 1);
+        }
+    };
+
+    nextPageItem.onclick = function () {
+        if (currentPage < totalPages) {
+            fetchNews(currentPage + 1);
+        }
+    };
+}
+
 function fetchNews(page = 1) {
+    if (page < 1) return;
+
     currentPage = page;
-    
-    // Get filter values
-    const search = document.getElementById('search-input').value;
-    const date = document.getElementById('date-filter').value;
-    const sentiment = document.getElementById('sentiment-select').value;
-    
-    let url = `/api/admin/news/?page=${page}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (date) url += `&date=${encodeURIComponent(date)}`;
-    if (sentiment) url += `&sentiment=${encodeURIComponent(sentiment)}`;
-    
-    // Show loading state
-    document.getElementById('news-grid').innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-    
+    const search = document.getElementById("search-input")?.value || '';
+    const date = document.getElementById("date-filter")?.value || '';
+    const sentiment = document.getElementById("sentiment-select")?.value || '';
+    const department = document.getElementById("department-select")?.value || '';  // Fixed naming
+
+    let url = `${fetchNewsUrl}?search=${encodeURIComponent(search)}&date=${encodeURIComponent(date)}&sentiment=${encodeURIComponent(sentiment)}&department=${encodeURIComponent(department)}&page=${page}`;
+
+    console.log("DEBUG: Fetching news with URL:", url);
+
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            newsItems = data.news;
-            totalPages = data.total_pages;
-            
-            renderNews();
-            updatePagination();
-            updateAppliedFilters(search, date, sentiment);
+            console.log("DEBUG: News data received", data);
+            const newsGrid = document.getElementById("news-grid");
+            newsGrid.innerHTML = "";
+
+            if (data.news.length > 0) {
+                newsItems = data.news;
+                data.news.forEach(article => {
+                    const card = document.createElement("div");
+                    card.className = "col";
+                    card.innerHTML = `
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <img src="${article.image_url}" alt="News Image"
+                                    class="img-fluid mb-3" style="object-fit: cover; height: 200px; border-radius: 8px;">
+                                <h3 class="card-title fs-5">${article.title}</h3>
+                                <p class="text-muted"><strong>Source:</strong> ${article.source}</p>
+                                <p class="text-muted"><strong>Sentiment:</strong> ${article.sentiment}</p>
+                                <p class="text-muted"><strong>Department:</strong> ${article.department}</p>
+                                <a href="/news/${article.article_id}" class="btn btn-primary btn-sm mt-2">Read More</a>
+                                <div class="mt-3">
+                                    <button class="btn btn-warning edit-news-btn" data-news-id="${article.article_id}">Edit</button>
+                                    <button class="btn btn-danger delete-news-btn" data-news-id="${article.article_id}">Delete</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    newsGrid.appendChild(card);
+                });
+            } else {
+                newsGrid.innerHTML = `<div class="col-12 text-center"><p class="text-danger">No news articles found.</p></div>`;
+            }
+
+            renderPagination(data.total_pages, currentPage);
         })
-        .catch(error => {
-            console.error('Error fetching news:', error);
-            document.getElementById('news-grid').innerHTML = '<div class="col-12 text-center py-5"><div class="alert alert-danger">Failed to load news. Please try again.</div></div>';
-        });
+        .catch(error => console.error("Error fetching news:", error));
 }
 
-// Render news cards
-function renderNews() {
-    const newsGrid = document.getElementById('news-grid');
-    newsGrid.innerHTML = '';
-    
-    if (newsItems.length === 0) {
-        newsGrid.innerHTML = '<div class="col-12 text-center py-5"><div class="alert alert-info">No news articles found.</div></div>';
-        return;
+
+// Handle Delete button click
+document.addEventListener('click', function (e) {
+    if (e.target.matches('.delete-news-btn') || e.target.closest('.delete-news-btn')) {
+        const newsId = e.target.closest('.delete-news-btn').dataset.newsId;
+        showDeleteModal(newsId);
     }
-    
-    newsItems.forEach(news => {
-        const sentimentClass = getSentimentClass(news.sentiment);
-        const sentimentIcon = getSentimentIcon(news.sentiment);
-        
-        const newsCard = document.createElement('div');
-        newsCard.className = 'col';
-        newsCard.innerHTML = `
-            <div class="card h-100 shadow-sm transition-hover">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span class="text-muted small">${news.published_date}</span>
-                    <span class="${sentimentClass} fw-semibold">${sentimentIcon} ${news.sentiment}</span>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">${news.title}</h5>
-                    <p class="card-text">${news.summary}</p>
-                </div>
-                <div class="card-footer d-flex justify-content-between">
-                    <a href="/article/${news.id}/" class="btn btn-sm btn-outline-primary">Read More</a>
-                    <div>
-                        <button class="btn btn-sm btn-warning edit-news-btn" data-news-id="${news.id}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                            </svg>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-news-btn" data-news-id="${news.id}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        newsGrid.appendChild(newsCard);
+});
+
+// Show delete confirmation modal
+function showDeleteModal(newsId) {
+    document.getElementById('deleteNewsId').value = newsId;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
+}
+
+// Delete news item
+function deleteNews() {
+    const newsId = document.getElementById('deleteNewsId').value;
+    if (!newsId) return console.error('No news ID provided for deletion.');
+
+    fetch(`/news/delete/${newsId}/`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`Failed to delete news: ${response.statusText}`);
+        return response.json();
+    })
+    .then(() => {
+        alert('News deleted successfully.');
+        closeModal('deleteConfirmModal');
+        fetchNews(currentPage); // Reload news list
+    })
+    .catch(error => alert('Error deleting news: ' + error.message));
+}
+
+// Handle Edit button click
+document.addEventListener('click', function (e) {
+    if (e.target.matches('.edit-news-btn') || e.target.closest('.edit-news-btn')) {
+        const newsId = e.target.closest('.edit-news-btn').dataset.newsId;
+        editNews(newsId);
+    }
+});
+
+// Edit news functionality
+function editNews(newsId) {
+    const news = newsItems.find(n => n.article_id === newsId);
+    if (!news) return console.error('News item not found:', newsId);
+
+    document.getElementById('editNewsId').value = news.article_id || '';
+    document.getElementById('editNewsTitle').value = news.title || 'Untitled';
+    document.getElementById('editNewsContent').value = news.content || 'No content provided.';
+    document.getElementById('editNewsSource').value = news.source || 'Unknown';
+    document.getElementById('editNewsDate').value = news.date ? new Date(news.date).toISOString().split('T')[0] : '';
+    document.getElementById('editNewsSentiment').value = news.sentiment || 'Neutral';
+
+    const editModal = new bootstrap.Modal(document.getElementById('editNewsModal'));
+    editModal.show();
+}
+
+// Update news (PUT request)
+function saveUpdatedNews() {
+    const newsId = document.getElementById('editNewsId').value;
+    const updatedNews = {
+        title: document.getElementById('editNewsTitle').value.trim(),
+        content: document.getElementById('editNewsContent').value.trim() || 'No content provided.',
+        source: document.getElementById('editNewsSource').value.trim(),
+        last_updated: new Date().toISOString(),
+        sentiment: document.getElementById('editNewsSentiment').value,
+    };
+
+    fetch(`/news/update/${newsId}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedNews),
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return response.json();
+    })
+    .then(() => {
+        alert('News updated successfully!');
+        closeModal('editNewsModal');
+        fetchNews(currentPage); // Reload news list
+    })
+    .catch(error => alert('Error updating news: ' + error.message));
+}
+
+// Ensure Cancel buttons remove the dim effect
+function setupModalCancelListeners() {
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = bootstrap.Modal.getInstance(button.closest('.modal'));
+            if (modal) modal.hide();
+            removeModalBackdrop();
+        });
     });
 }
 
-// Update pagination controls
-function updatePagination() {
-    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
-    
-    // Update prev/next buttons
-    const prevPageItem = document.getElementById('prev-page-item');
-    const nextPageItem = document.getElementById('next-page-item');
-    
-    prevPageItem.classList.toggle('disabled', currentPage <= 1);
-    nextPageItem.classList.toggle('disabled', currentPage >= totalPages);
+// Close modal properly and restore screen
+function closeModal(modalId) {
+    const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+    if (modal) modal.hide();
+    removeModalBackdrop();
 }
 
-// Update applied filters display
-function updateAppliedFilters(search, date, sentiment) {
-    const appliedFilters = document.getElementById('applied-filters');
-    appliedFilters.innerHTML = '';
-    
-    if (search || date || sentiment) {
-        appliedFilters.innerHTML += '<div class="me-2">Active filters:</div>';
-        
-        if (search) {
-            appliedFilters.innerHTML += `<span class="badge bg-success">Search: ${search}</span>`;
-        }
-        
-        if (date) {
-            appliedFilters.innerHTML += `<span class="badge bg-success">Date: ${date}</span>`;
-        }
-        
-        if (sentiment) {
-            appliedFilters.innerHTML += `<span class="badge bg-success">Sentiment: ${sentiment}</span>`;
-        }
-    }
+// Remove modal backdrop and enable scrolling
+function removeModalBackdrop() {
+    setTimeout(() => {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = "auto";
+    }, 300);
 }
 
-// Get CSS class for sentiment
-function getSentimentClass(sentiment) {
-    switch (sentiment) {
-        case 'Positive':
-            return 'text-success';
-        case 'Negative':
-            return 'text-danger';
-        case 'Neutral':
-            return 'text-warning';
-        default:
-            return 'text-muted';
-    }
-}
-
-// Get icon for sentiment
-function getSentimentIcon(sentiment) {
-    switch (sentiment) {
-        case 'Positive':
-            return '😊';
-        case 'Negative':
-            return '😠';
-        case 'Neutral':
-            return '😐';
-        default:
-            return '❓';
-    }
-}
-
-// Edit news
-function editNews(newsId) {
-    const news = newsItems.find(n =>
+// Attach event listeners for cancel buttons
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('confirmDeleteBtn').addEventListener('click', deleteNews);
+    document.getElementById('saveNewsBtn').addEventListener('click', saveUpdatedNews);
+    document.getElementById('cancelEditBtn').addEventListener('click', () => closeModal('editNewsModal'));
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => closeModal('deleteConfirmModal'));
+});
