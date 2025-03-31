@@ -54,7 +54,7 @@ function fetchNews(page = 1) {
     const search = document.getElementById("search-input")?.value || '';
     const date = document.getElementById("date-filter")?.value || '';
     const sentiment = document.getElementById("sentiment-select")?.value || '';
-    const department = document.getElementById("department-select")?.value || '';  // Fixed naming
+    const department = document.getElementById("department-select")?.value || '';
 
     let url = `${fetchNewsUrl}?search=${encodeURIComponent(search)}&date=${encodeURIComponent(date)}&sentiment=${encodeURIComponent(sentiment)}&department=${encodeURIComponent(department)}&page=${page}`;
 
@@ -63,28 +63,29 @@ function fetchNews(page = 1) {
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            console.log("DEBUG: News data received", data);
+            console.log("DEBUG: News data received", data);  // Verify structure
             const newsGrid = document.getElementById("news-grid");
             newsGrid.innerHTML = "";
-
+        
             if (data.news.length > 0) {
-                newsItems = data.news;
                 data.news.forEach(article => {
                     const card = document.createElement("div");
                     card.className = "col";
                     card.innerHTML = `
                         <div class="card h-100 shadow-sm">
-                            <div class="card-body">
-                                <img src="${article.image_url}" alt="News Image"
-                                    class="img-fluid mb-3" style="object-fit: cover; height: 200px; border-radius: 8px;">
+                            <div class="card-body d-flex flex-column">
+                                <img src="${article.image_url || '/static/default.jpeg'}" 
+                                     class="img-fluid mb-3" style="object-fit: cover; height: 200px; border-radius: 8px;">
                                 <h3 class="card-title fs-5">${article.title}</h3>
-                                <p class="text-muted"><strong>Source:</strong> ${article.source}</p>
-                                <p class="text-muted"><strong>Sentiment:</strong> ${article.sentiment}</p>
-                                <p class="text-muted"><strong>Department:</strong> ${article.department}</p>
-                                <a href="/news/${article.article_id}" class="btn btn-primary btn-sm mt-2">Read More</a>
-                                <div class="mt-3">
-                                    <button class="btn btn-warning edit-news-btn" data-news-id="${article.article_id}">Edit</button>
-                                    <button class="btn btn-danger delete-news-btn" data-news-id="${article.article_id}">Delete</button>
+                                <p class="text-muted mb-1"><strong>Source:</strong> ${article.source}</p>
+                                <p class="text-muted mb-1"><strong>Sentiment:</strong> ${article.sentiment}</p>
+                                <p class="text-muted mb-2"><strong>Department:</strong> ${article.category || article.department || 'Not specified'}</p>
+                                <div class="mt-auto"></div>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0 p-3">
+                                <div class="d-flex gap-2">
+                                    <a href="/news/news_get/${article.article_id}/" class="btn btn-primary flex-grow-1">Read More</a>
+                                    <button class="btn btn-danger flex-grow-1 delete-news-btn" data-news-id="${article.article_id}">Delete</button>
                                 </div>
                             </div>
                         </div>`;
@@ -93,12 +94,10 @@ function fetchNews(page = 1) {
             } else {
                 newsGrid.innerHTML = `<div class="col-12 text-center"><p class="text-danger">No news articles found.</p></div>`;
             }
-
             renderPagination(data.total_pages, currentPage);
         })
         .catch(error => console.error("Error fetching news:", error));
 }
-
 
 // Handle Delete button click
 document.addEventListener('click', function (e) {
@@ -136,58 +135,6 @@ function deleteNews() {
     .catch(error => alert('Error deleting news: ' + error.message));
 }
 
-// Handle Edit button click
-document.addEventListener('click', function (e) {
-    if (e.target.matches('.edit-news-btn') || e.target.closest('.edit-news-btn')) {
-        const newsId = e.target.closest('.edit-news-btn').dataset.newsId;
-        editNews(newsId);
-    }
-});
-
-// Edit news functionality
-function editNews(newsId) {
-    const news = newsItems.find(n => n.article_id === newsId);
-    if (!news) return console.error('News item not found:', newsId);
-
-    document.getElementById('editNewsId').value = news.article_id || '';
-    document.getElementById('editNewsTitle').value = news.title || 'Untitled';
-    document.getElementById('editNewsContent').value = news.content || 'No content provided.';
-    document.getElementById('editNewsSource').value = news.source || 'Unknown';
-    document.getElementById('editNewsDate').value = news.date ? new Date(news.date).toISOString().split('T')[0] : '';
-    document.getElementById('editNewsSentiment').value = news.sentiment || 'Neutral';
-
-    const editModal = new bootstrap.Modal(document.getElementById('editNewsModal'));
-    editModal.show();
-}
-
-// Update news (PUT request)
-function saveUpdatedNews() {
-    const newsId = document.getElementById('editNewsId').value;
-    const updatedNews = {
-        title: document.getElementById('editNewsTitle').value.trim(),
-        content: document.getElementById('editNewsContent').value.trim() || 'No content provided.',
-        source: document.getElementById('editNewsSource').value.trim(),
-        last_updated: new Date().toISOString(),
-        sentiment: document.getElementById('editNewsSentiment').value,
-    };
-
-    fetch(`/news/update/${newsId}/`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedNews),
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-        return response.json();
-    })
-    .then(() => {
-        alert('News updated successfully!');
-        closeModal('editNewsModal');
-        fetchNews(currentPage); // Reload news list
-    })
-    .catch(error => alert('Error updating news: ' + error.message));
-}
-
 // Ensure Cancel buttons remove the dim effect
 function setupModalCancelListeners() {
     document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
@@ -218,7 +165,4 @@ function removeModalBackdrop() {
 // Attach event listeners for cancel buttons
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('confirmDeleteBtn').addEventListener('click', deleteNews);
-    document.getElementById('saveNewsBtn').addEventListener('click', saveUpdatedNews);
-    document.getElementById('cancelEditBtn').addEventListener('click', () => closeModal('editNewsModal'));
-    document.getElementById('cancelDeleteBtn').addEventListener('click', () => closeModal('deleteConfirmModal'));
 });

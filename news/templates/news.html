@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+<meta http-equiv="refresh" content="260">
 <div class="container mt-4">
     <h1 class="display-4 fw-bold mb-4 text-center">Latest News</h1>
 
@@ -141,7 +142,7 @@ function fetchNews(page = 1) {
             if (data.news && data.news.length > 0) {
                 data.news.forEach(article => {
                     // Use default image if image_url is not available
-                    const imageUrl = article.image_url ? article.image_url : "/static/images/default-news.jpg";
+                    const imageUrl = article.image_url ? article.image_url : "{% static 'default.jpeg' %}";
                     console.log(article);
                     // Format the date if needed
                     let formattedDate = article.last_updated;

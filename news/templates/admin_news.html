@@ -30,6 +30,7 @@
 {% endblock %}
 
 {% block content %}
+<meta http-equiv="refresh" content="60">
 <div class="container mt-4">
     <h1 class="display-4 fw-bold mb-4 text-center">News Management</h1>
 
@@ -81,16 +82,7 @@
                 </div>
             </form>
             
-            <!-- Add New News Button -->
-            <div class="mt-3">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNewsModal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add New News
-                </button>
-            </div>
+            
             
             <!-- Applied Filters Section -->
             <div id="applied-filters" class="d-flex flex-wrap gap-2 mt-3"></div>
@@ -115,109 +107,6 @@
         </ul>
     </nav>
 </div>
-
-<!-- Add News Modal -->
-<div class="modal fade" id="addNewsModal" tabindex="-1" aria-labelledby="addNewsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addNewsModalLabel">Add New News</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addNewsForm">
-                    <div class="mb-3">
-                        <label for="newsTitle" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="newsTitle" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="newsContent" class="form-label">Content</label>
-                        <textarea class="form-control" id="newsContent" rows="5" required></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="newsSource" class="form-label">Source</label>
-                            <input type="text" class="form-control" id="newsSource" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="newsDate" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="newsDate" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="newsSentiment" class="form-label">Sentiment</label>
-                            <select class="form-select" id="newsSentiment" required>
-                                <option value="Positive">Positive</option>
-                                <option value="Negative">Negative</option>
-                                <option value="Neutral">Neutral</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="newsDepartment" class="form-label">Department</label>
-                            <select name="department" id="department-select" class="form-select">
-                                <option value="" {% if not request.GET.department %}selected{% endif %}>All Departments</option>
-                                {% for dept in departments %}
-                                    <option value="{{ dept }}" {% if request.GET.department == dept %}selected{% endif %}>{{ dept }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveNews()">Save News</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="editNewsModal" tabindex="-1" aria-labelledby="editNewsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editNewsModalLabel">Edit News</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editNewsForm">
-                    <input type="hidden" id="editNewsId">
-                    <div class="mb-3">
-                        <label for="editNewsTitle" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="editNewsTitle" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editNewsContent" class="form-label">Content</label>
-                        <textarea class="form-control" id="editNewsContent" rows="5" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editNewsSource" class="form-label">Source</label>
-                        <input type="text" class="form-control" id="editNewsSource" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editNewsDate" class="form-label">Date</label>
-                        <input type="date" class="form-control" id="editNewsDate" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editNewsSentiment" class="form-label">Sentiment</label>
-                        <select class="form-select" id="editNewsSentiment" required>
-                            <option value="Positive">Positive</option>
-                            <option value="Neutral">Neutral</option>
-                            <option value="Negative">Negative</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveNewsBtn">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
